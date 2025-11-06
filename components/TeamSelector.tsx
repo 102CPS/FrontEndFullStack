@@ -1,65 +1,85 @@
 "use client";
-import { useState } from "react";
-import { getTeams, Team } from "../services/teamService";
+import { useEffect, useMemo, useState } from "react";
+import { getTeams } from "@services/teamService";
 
 interface TeamSelectorProps {
-  onSave: (selected: string[]) => void;
+  selectedFavorites: number[];
+  onSave: (selected: number[]) => void;
 }
 
-export default function TeamSelector({ onSave }: TeamSelectorProps) {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [error, setError] = useState<string>("");
+export default function TeamSelector({ selectedFavorites, onSave }: TeamSelectorProps) {
+  const teams = useMemo(() => getTeams(), []);
+  const [selected, setSelected] = useState<number[]>(selectedFavorites);
+  const [error, setError] = useState("");
+  const [confirmation, setConfirmation] = useState("");
 
-  const teams: Team[] = getTeams();
+  useEffect(() => {
+    setSelected(selectedFavorites);
+  }, [selectedFavorites]);
 
-  const toggleTeam = (teamName: string) => {
+  const toggleTeam = (teamId: number) => {
     setSelected((prev) =>
-      prev.includes(teamName)
-        ? prev.filter((t) => t !== teamName)
-        : [...prev, teamName]
+      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId]
     );
   };
 
   const handleSave = () => {
     if (selected.length === 0) {
-      setError("Please select at least one team.");
+      setConfirmation("");
+      setError("Select at least one team.");
       return;
     }
     setError("");
     onSave(selected);
-    alert("Favorite teams saved!");
+    setConfirmation("Favorite teams saved to your profile.");
   };
 
   return (
-    <div style={{ border: "1px solid #ddd", padding: "1rem", borderRadius: "10px" }}>
-      <h2>Select Favorite Teams</h2>
-      {teams.map((team) => (
-        <label key={team.id} style={{ display: "block", marginBottom: "5px" }}>
-          <input
-            type="checkbox"
-            checked={selected.includes(team.name)}
-            onChange={() => toggleTeam(team.name)}
-          />
-          <span style={{ marginLeft: "5px" }}>
-            {team.name} ({team.league})
-          </span>
-        </label>
-      ))}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <button
-        onClick={handleSave}
-        style={{
-          marginTop: "10px",
-          background: "#0070f3",
-          color: "#fff",
-          border: "none",
-          padding: "6px 12px",
-          borderRadius: "6px",
-          cursor: "pointer",
-        }}
-      >
-        Save
+    <section className="team-selector">
+      <header className="team-selector__header">
+        <h2 className="team-selector__title">
+          Select your team(s)
+        </h2>
+        <p className="team-selector__subtitle">
+          Choose the clubs you want to follow in your FootTrack dashboard.
+        </p>
+      </header>
+
+      <div className="team-selector__options">
+        {teams.map((team) => {
+          const isSelected = selected.includes(team.id);
+          return (
+            <label
+              key={team.id}
+              className={
+                isSelected
+                  ? "team-selector__option team-selector__option--selected"
+                  : "team-selector__option"
+              }
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleTeam(team.id)}
+                className="team-selector__checkbox"
+              />
+              <div>
+                <div className="team-selector__option-name">{team.name}</div>
+                <div className="team-selector__option-meta">
+                  {team.league} · {team.country}
+                </div>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+
+      {error && <p className="team-selector__error">{error}</p>}
+      {confirmation && <p className="team-selector__confirmation">{confirmation}</p>}
+
+      <button onClick={handleSave} className="team-selector__submit">
+        Save favorites
       </button>
-    </div>
+    </section>
   );
 }
