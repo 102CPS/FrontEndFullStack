@@ -1,78 +1,72 @@
 "use client";
-import { useState } from "react";
-import TeamSelector from "@components/TeamSelector";
-import MatchList from "@components/MatchList";
+import { useEffect, useState } from "react";
+import AuthPanel from "@components/AuthPanel";
+import Dashboard from "@components/Dashboard";
+import { getCurrentUser, logoutUser, UserProfile } from "@services/authService";
 
 export default function Home() {
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isBootstrapped, setIsBootstrapped] = useState(false);
+
+  useEffect(() => {
+    const profile = getCurrentUser();
+    if (profile) {
+      setUser(profile);
+    }
+    setIsBootstrapped(true);
+  }, []);
+
+  const handleAuthenticated = (profile: UserProfile) => {
+    setUser(profile);
+  };
+
+  const handleUserUpdate = (profile: UserProfile) => {
+    setUser(profile);
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setUser(null);
+  };
+
+  if (!isBootstrapped) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "linear-gradient(135deg, #0f172a, #1e3a8a)",
+          color: "#fff",
+          fontSize: "1.2rem",
+        }}
+      >
+        Loading FootTrack...
+      </div>
+    );
+  }
+
+  const isAuthenticated = Boolean(user);
 
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "flex-start",
         minHeight: "100vh",
-        padding: "50px 20px",
-        background: "linear-gradient(160deg, #1b5e20 0%, #00c853 100%)", // ⚽ turf-like background
+        padding: isAuthenticated ? "40px 24px" : "80px 24px",
+        background: isAuthenticated
+          ? "linear-gradient(180deg, #0f172a, #1e3a8a 40%, #0f172a)"
+          : "linear-gradient(160deg, #0f172a, #1d4ed8)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: isAuthenticated ? "flex-start" : "center",
       }}
     >
-      {/* Header Section */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "16px",
-          marginBottom: "40px",
-          padding: "16px 36px",
-          borderRadius: "50px",
-          background: "linear-gradient(145deg, #f8fdfb 0%, #eaf6ef 100%)",
-          boxShadow: "0 6px 14px rgba(0, 0, 0, 0.25)",
-          backdropFilter: "blur(6px)",
-        }}
-      >
-        <img
-          src="/logo.png"
-          alt="FootTrack Logo"
-          width={70}
-          height={70}
-          style={{
-            objectFit: "contain",
-            filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.25))",
-          }}
-        />
-        <h1
-          style={{
-            fontSize: "2.6rem",
-            fontWeight: "800",
-            letterSpacing: "0.5px",
-            background: "linear-gradient(90deg, #007bff, #00b894)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            fontFamily: "'Rajdhani', 'Poppins', sans-serif",
-            textShadow: "0 2px 5px rgba(0,0,0,0.15)",
-          }}
-        >
-          FootTrack
-        </h1>
-      </div>
-
-      {/* Main Content */}
-      <main
-        style={{
-          width: "100%",
-          maxWidth: "650px",
-          background: "rgba(255,255,255,0.95)",
-          borderRadius: "18px",
-          padding: "30px",
-          boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
-          backdropFilter: "blur(6px)",
-        }}
-      >
-        <TeamSelector onSave={setFavorites} />
-        <MatchList favoriteTeams={favorites} />
-      </main>
+      {isAuthenticated && user ? (
+        <Dashboard user={user} onUserUpdate={handleUserUpdate} onLogout={handleLogout} />
+      ) : (
+        <AuthPanel onAuthenticated={handleAuthenticated} />
+      )}
     </div>
   );
 }

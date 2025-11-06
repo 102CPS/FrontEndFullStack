@@ -1,28 +1,83 @@
-export interface Match {
-  id: number;
-  home: string;
-  away: string;
-  date: string;
-  score: string | null;
+export interface MatchStats {
+  goals: { player: string; teamId: number; minute: string }[];
+  assists: { player: string; teamId: number; minute: string }[];
+  cards: { player: string; teamId: number; minute: string; type: "yellow" | "red" }[];
 }
 
-export const getMatches = (): Match[] => [
-  // 🕓 Past Matches
-  { id: 1, home: "Barcelona", away: "Real Madrid", date: "2025-10-30", score: "3-2" },
-  { id: 2, home: "Real Madrid", away: "Valencia", date: "2025-11-02", score: "4-1" },
-  { id: 3, home: "Liverpool", away: "Chelsea", date: "2025-11-05", score: "1-0" },
-  { id: 4, home: "Bayern Munich", away: "Dortmund", date: "2025-11-07", score: "2-2" },
+export interface Match {
+  id: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  date: string;
+  status: "scheduled" | "finished";
+  score: { home: number; away: number } | null;
+  stats?: MatchStats;
+}
 
-  // 🟢 Upcoming Matches (Nov 2025 – Jun 2026)
-  { id: 5, home: "Barcelona", away: "Atletico Madrid", date: "2025-11-12", score: null },
-  { id: 6, home: "Real Madrid", away: "Athletic Bilbao", date: "2025-11-14", score: null },
-  { id: 7, home: "Liverpool", away: "Manchester United", date: "2025-11-20", score: null },
-  { id: 8, home: "Bayern Munich", away: "Leipzig", date: "2025-12-01", score: null },
-  { id: 9, home: "Barcelona", away: "Sevilla", date: "2025-12-10", score: null },
-  { id: 10, home: "Liverpool", away: "Arsenal", date: "2026-01-15", score: null },
-  { id: 11, home: "Bayern Munich", away: "Stuttgart", date: "2026-02-05", score: null },
-  { id: 12, home: "Real Madrid", away: "Atletico Madrid", date: "2026-03-08", score: null },
-  { id: 13, home: "Liverpool", away: "Tottenham", date: "2026-04-17", score: null },
-  { id: 14, home: "Barcelona", away: "Villarreal", date: "2026-05-21", score: null },
-  { id: 15, home: "Bayern Munich", away: "Frankfurt", date: "2026-06-02", score: null },
+const matches: Match[] = [
+  {
+    id: 1,
+    homeTeamId: 2,
+    awayTeamId: 5,
+    date: "2025-10-12T18:00:00Z",
+    status: "finished",
+    score: { home: 2, away: 1 },
+    stats: {
+      goals: [
+        { player: "Ousmane Dembélé", teamId: 2, minute: "45'" },
+        { player: "Kylian Mbappé", teamId: 2, minute: "68'" },
+        { player: "Alexandre Lacazette", teamId: 5, minute: "73'" },
+      ],
+      assists: [
+        { player: "Achraf Hakimi", teamId: 2, minute: "45'" },
+        { player: "Vitinha", teamId: 2, minute: "68'" },
+      ],
+      cards: [
+        { player: "Lucas Hernández", teamId: 2, minute: "22'", type: "yellow" },
+      ],
+    },
+  },
+  {
+    id: 2,
+    homeTeamId: 2,
+    awayTeamId: 6,
+    date: "2025-10-14T20:00:00Z",
+    status: "scheduled",
+    score: null,
+    stats: {
+      goals: [],
+      assists: [],
+      cards: [],
+    },
+  },
+  {
+    id: 3,
+    homeTeamId: 3,
+    awayTeamId: 4,
+    date: "2025-10-15T16:30:00Z",
+    status: "scheduled",
+    score: null,
+    stats: {
+      goals: [],
+      assists: [],
+      cards: [],
+    },
+  },
 ];
+
+export const getMatches = () => matches.slice();
+
+export const getMatchById = (id: number) => matches.find((match) => match.id === id) ?? null;
+
+export const getMatchesForTeams = (teamIds: number[]) =>
+  matches.filter(
+    (match) => teamIds.includes(match.homeTeamId) || teamIds.includes(match.awayTeamId)
+  );
+
+export const getUpcomingMatchesForTeam = (teamId: number) =>
+  matches.filter((match) => {
+    const isTeamMatch = match.homeTeamId === teamId || match.awayTeamId === teamId;
+    if (!isTeamMatch) return false;
+    if (!match.date) return false;
+    return new Date(match.date).getTime() >= Date.now();
+  });

@@ -1,105 +1,109 @@
 "use client";
-import { getMatches, Match } from "../services/matchService";
+import Link from "next/link";
+import { useMemo } from "react";
+import { getMatchesForTeams, Match } from "@services/matchService";
+import { getTeamById } from "@services/teamService";
 
 interface MatchListProps {
-  favoriteTeams: string[];
+  favoriteTeamIds: number[];
 }
 
-export default function MatchList({ favoriteTeams }: MatchListProps) {
-  const matches: Match[] = getMatches();
-  const now = new Date();
+const formatScore = (match: Match) => {
+  if (!match.score) return "TBD";
+  return `${match.score.home} - ${match.score.away}`;
+};
 
-  // ✅ If no favorites selected, show all matches
-  const visibleMatches =
-    favoriteTeams.length > 0
-      ? matches.filter(
-          (m) => favoriteTeams.includes(m.home) || favoriteTeams.includes(m.away)
-        )
-      : matches;
+const formatDate = (value: string) =>
+  new Date(value).toLocaleString(undefined, {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  const pastMatches = visibleMatches.filter((m) => new Date(m.date) < now);
-  const upcomingMatches = visibleMatches.filter((m) => new Date(m.date) >= now);
+export default function MatchList({ favoriteTeamIds }: MatchListProps) {
+  const matches = useMemo(() => getMatchesForTeams(favoriteTeamIds), [favoriteTeamIds]);
 
-  const renderMatch = (m: Match) => (
-    <li
-      key={m.id}
-      style={{
-        border: "1px solid #e0e0e0",
-        borderRadius: "10px",
-        padding: "15px 18px",
-        marginBottom: "14px",
-        backgroundColor: "#fafafa",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-        listStyle: "none",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-      }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.transform = "scale(1.02)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.transform = "scale(1)")
-      }
-    >
-      <div style={{ fontWeight: "600", marginBottom: "6px" }}>
-        <span style={{ color: "#0d47a1" }}>{m.home}</span> vs{" "}
-        <span style={{ color: "#b71c1c" }}>{m.away}</span>
-      </div>
-      <div style={{ color: "#444" }}>📅 Date: {m.date}</div>
-      <div style={{ color: "#444" }}>
-        ⚽ Score: {m.score ?? "Not yet played"}
-      </div>
-    </li>
-  );
+  const pastMatches = matches.filter((match) => match.status === "finished");
+  const upcomingMatches = matches.filter((match) => match.status === "scheduled");
+
+  const renderRow = (match: Match) => {
+    const homeTeam = getTeamById(match.homeTeamId);
+    const awayTeam = getTeamById(match.awayTeamId);
+    return (
+      <li key={match.id} style={{ listStyle: "none" }}>
+        <Link
+          href={`/matches/${match.id}`}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            padding: "16px",
+            borderRadius: "14px",
+            border: "1px solid #e5e7eb",
+            textDecoration: "none",
+            color: "inherit",
+            background: "#f9fafb",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
+            <span>{homeTeam?.name}</span>
+            <span style={{ color: "#2563eb" }}>{formatScore(match)}</span>
+            <span>{awayTeam?.name}</span>
+          </div>
+          <div style={{ color: "#6b7280", fontSize: "0.9rem" }}>{formatDate(match.date)}</div>
+        </Link>
+      </li>
+    );
+  };
 
   return (
-    <div
+    <section
       style={{
-        border: "1px solid #ddd",
-        padding: "20px",
-        borderRadius: "14px",
-        marginTop: "30px",
-        backgroundColor: "rgba(255,255,255,0.97)",
+        marginTop: "24px",
+        borderRadius: "16px",
+        border: "1px solid #e2e8f0",
+        padding: "24px",
+        background: "#ffffff",
+        boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
       }}
     >
-      {/* Past Matches */}
-      <h2
-        style={{
-          color: "#555",
-          borderBottom: "3px solid #1976d2",
-          paddingBottom: "5px",
-          marginBottom: "15px",
-          fontFamily: "'Poppins', sans-serif",
-        }}
-      >
-        Past Matches
-      </h2>
-      {pastMatches.length === 0 ? (
-        <p style={{ color: "#777", marginBottom: "20px" }}>
-          No past matches available.
+      <header style={{ marginBottom: "18px" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>My matches</h2>
+        <p style={{ color: "#475569" }}>
+          Only fixtures for your saved favorites are shown. Click a match to see detailed
+          statistics.
         </p>
-      ) : (
-        <ul style={{ padding: 0, marginBottom: "30px" }}>
-          {pastMatches.map(renderMatch)}
-        </ul>
-      )}
+      </header>
 
-      {/* Upcoming Matches */}
-      <h2
-        style={{
-          color: "#1565c0",
-          borderBottom: "3px solid #1976d2",
-          paddingBottom: "5px",
-          marginBottom: "15px",
-          fontFamily: "'Poppins', sans-serif",
-        }}
-      >
-        Upcoming Matches
-      </h2>
-      {upcomingMatches.length === 0 ? (
-        <p style={{ color: "#777" }}>No upcoming matches available.</p>
+      {matches.length === 0 ? (
+        <p style={{ color: "#6b7280", fontWeight: 500 }}>No matches available.</p>
       ) : (
-        <ul style={{ padding: 0 }}>{upcomingMatches.map(renderMatch)}</ul>
+        <div style={{ display: "grid", gap: "22px" }}>
+          <div>
+            <h3 style={{ color: "#1d4ed8", marginBottom: "12px" }}>Upcoming</h3>
+            {upcomingMatches.length === 0 ? (
+              <p style={{ color: "#6b7280" }}>No upcoming matches.</p>
+            ) : (
+              <ul style={{ padding: 0, display: "grid", gap: "12px" }}>
+                {upcomingMatches.map(renderRow)}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <h3 style={{ color: "#047857", marginBottom: "12px" }}>Results</h3>
+            {pastMatches.length === 0 ? (
+              <p style={{ color: "#6b7280" }}>No results to show yet.</p>
+            ) : (
+              <ul style={{ padding: 0, display: "grid", gap: "12px" }}>
+                {pastMatches.map(renderRow)}
+              </ul>
+            )}
+          </div>
+        </div>
       )}
-    </div>
+    </section>
   );
 }
