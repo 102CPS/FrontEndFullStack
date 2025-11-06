@@ -1,105 +1,90 @@
 "use client";
-import { getMatches, Match } from "../services/matchService";
+
+import Link from "next/link";
+import { useMemo } from "react";
+import styles from "./MatchList.module.css";
+import { getMatches, Match } from "@services/matchService";
+import { getTeamMap, Team } from "@services/teamService";
 
 interface MatchListProps {
-  favoriteTeams: string[];
+  favorites: number[];
 }
 
-export default function MatchList({ favoriteTeams }: MatchListProps) {
-  const matches: Match[] = getMatches();
-  const now = new Date();
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 
-  // ✅ If no favorites selected, show all matches
-  const visibleMatches =
-    favoriteTeams.length > 0
-      ? matches.filter(
-          (m) => favoriteTeams.includes(m.home) || favoriteTeams.includes(m.away)
-        )
-      : matches;
+const MatchList = ({ favorites }: MatchListProps) => {
+  const teamMap = useMemo<Map<number, Team>>(() => getTeamMap(), []);
+  const matches = useMemo<Match[]>(() => getMatches(), []);
 
-  const pastMatches = visibleMatches.filter((m) => new Date(m.date) < now);
-  const upcomingMatches = visibleMatches.filter((m) => new Date(m.date) >= now);
+  if (favorites.length === 0) {
+    return (
+      <section className={styles.card}>
+        <h2 className={styles.title}>My matches</h2>
+        <p className={styles.empty}>Select favorite teams to view upcoming games.</p>
+      </section>
+    );
+  }
 
-  const renderMatch = (m: Match) => (
-    <li
-      key={m.id}
-      style={{
-        border: "1px solid #e0e0e0",
-        borderRadius: "10px",
-        padding: "15px 18px",
-        marginBottom: "14px",
-        backgroundColor: "#fafafa",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-        listStyle: "none",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-      }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.transform = "scale(1.02)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.transform = "scale(1)")
-      }
-    >
-      <div style={{ fontWeight: "600", marginBottom: "6px" }}>
-        <span style={{ color: "#0d47a1" }}>{m.home}</span> vs{" "}
-        <span style={{ color: "#b71c1c" }}>{m.away}</span>
-      </div>
-      <div style={{ color: "#444" }}>📅 Date: {m.date}</div>
-      <div style={{ color: "#444" }}>
-        ⚽ Score: {m.score ?? "Not yet played"}
-      </div>
-    </li>
+  const visibleMatches = matches.filter(
+    (match) =>
+      favorites.includes(match.homeTeamId) ||
+      (match.away.teamId !== undefined && favorites.includes(match.away.teamId))
+  );
+
+  if (visibleMatches.length === 0) {
+    return (
+      <section className={styles.card}>
+        <h2 className={styles.title}>My matches</h2>
+        <p className={styles.empty}>No matches available.</p>
+      </section>
+    );
+  }
+
+  const sortedMatches = [...visibleMatches].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        padding: "20px",
-        borderRadius: "14px",
-        marginTop: "30px",
-        backgroundColor: "rgba(255,255,255,0.97)",
-      }}
-    >
-      {/* Past Matches */}
-      <h2
-        style={{
-          color: "#555",
-          borderBottom: "3px solid #1976d2",
-          paddingBottom: "5px",
-          marginBottom: "15px",
-          fontFamily: "'Poppins', sans-serif",
-        }}
-      >
-        Past Matches
-      </h2>
-      {pastMatches.length === 0 ? (
-        <p style={{ color: "#777", marginBottom: "20px" }}>
-          No past matches available.
-        </p>
-      ) : (
-        <ul style={{ padding: 0, marginBottom: "30px" }}>
-          {pastMatches.map(renderMatch)}
-        </ul>
-      )}
+    <section className={styles.card}>
+      <h2 className={styles.title}>My matches</h2>
+      <ul className={styles.list}>
+        {sortedMatches.map((match) => {
+          const homeTeam = teamMap.get(match.homeTeamId);
+          const awayTeamName =
+            match.away.teamId !== undefined
+              ? teamMap.get(match.away.teamId)?.name ?? match.away.name
+              : match.away.name;
 
-      {/* Upcoming Matches */}
-      <h2
-        style={{
-          color: "#1565c0",
-          borderBottom: "3px solid #1976d2",
-          paddingBottom: "5px",
-          marginBottom: "15px",
-          fontFamily: "'Poppins', sans-serif",
-        }}
-      >
-        Upcoming Matches
-      </h2>
-      {upcomingMatches.length === 0 ? (
-        <p style={{ color: "#777" }}>No upcoming matches available.</p>
-      ) : (
-        <ul style={{ padding: 0 }}>{upcomingMatches.map(renderMatch)}</ul>
-      )}
-    </div>
+          const score = match.score
+            ? `${match.score.home} - ${match.score.away}`
+            : "TBD";
+
+          return (
+            <li key={match.id} className={styles.item}>
+              <div className={styles.row}>
+                <span className={styles.date}>{formatDate(match.date)}</span>
+                <span className={styles.competition}>{match.competition}</span>
+              </div>
+              <div className={styles.row}>
+                <span className={styles.teams}>
+                  {homeTeam?.name ?? ""} vs {awayTeamName}
+                </span>
+                <span className={styles.score}>Result: {score}</span>
+              </div>
+              <Link className={styles.link} href={`/matches/${match.id}`}>
+                View match details
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
-}
+};
+
+export default MatchList;

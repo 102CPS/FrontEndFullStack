@@ -1,0 +1,121 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 35px rgba(12, 56, 90, 0.12);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f2742;
+}
+
+.subtitle {
+  margin: 0.2rem 0 0;
+  color: #4d657b;
+  font-size: 0.95rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid #d7e2ec;
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  background: rgba(246, 250, 253, 0.92);
+}
+
+.checkbox {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  cursor: pointer;
+  font-weight: 500;
+  color: #20334a;
+}
+
+.checkbox input {
+  margin-top: 0.25rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid #99afc6;
+}
+
+.teamName {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.meta {
+  display: block;
+  color: #5b738c;
+  font-size: 0.85rem;
+}
+
+.detailLink {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0a84ff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.detailLink:hover {
+  text-decoration: underline;
+}
+
+.save {
+  align-self: flex-end;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.6rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #ffffff;
+  background: linear-gradient(120deg, #0a84ff, #00b894);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(10, 132, 255, 0.22);
+}
+
+.error,
+.success {
+  margin: 0;
+  font-weight: 600;
+}
+
+.error {
+  color: #c62828;
+}
+
+.success {
+  color: #1b5e20;
+}
